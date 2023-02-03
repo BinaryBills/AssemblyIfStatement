@@ -1,103 +1,77 @@
 ;Author: Binary Bills
-;Creation Date: February 14,2022
-;Modification Date: February 16,2022
-;Purpose: Compute the mean and the variance of data at location RAW, 
-;defining the raw data as WORD.
-INCLUDE Irvine32.inc
+;Creation Date: March 3,2022
+;Modification Date: March 4,2022
+;Purpose: Reads a number between 0 and 100 into the register Al and assigns the
+;the letter according to the if-statements
 
+INCLUDE Irvine32.inc
 .386
 .model flat,stdcall
 .stack 4096
 ExitProcess PROTO, dwExitCode:DWORD
 
 .data
-RAW WORD 10, 12, 8, 17, 9, 22, 18, 11, 23, 7, 30, 22, 19, 60, 71
-DIFF WORD 15 Dup(?)
-SQUARE WORD 15 Dup(?)
-MEAN WORD 0
-displayMean BYTE "MEAN: ", 0
-displayVariance BYTE "Var: ",0
+prompt db "Input a number between 0-100: ",0	;User prompt
+userInput BYTE ?
+displayGrade BYTE "Grade: ", 0
+displayScore BYTE "Score: ", 0
+Grade BYTE ?
 
 .code
 main PROC
- 
-;   /************************************************************\
-;  /      1) Finding the Mean Given a Set of Data                 \
-; /****************************************************************\
+mov edx, OFFSET prompt 
+call writeString	;Prompts user to input integer
+call readint	;Reads number from user and places it in the al register
 
-mov esi,OFFSET RAW ;1st mem address of RAW
-mov ecx,(LENGTHOF RAW) ;Loop Counter
-mov ebx,(LENGTHOF RAW) ;Divisor
-mov ax, 0 ;Arithmetic reg (add, dividend,etc.)
+JS EndProg ;Makes sure user enters positive number
 
-findSum:
-add ax,[esi]
-movzx eax,ax ;Converts to 32-bit so it can be used by writeDec
-add esi,2 ;Increments by 2 bytes to reach next address
-loop findSum
+cmp AL, 100 ;Makes sure the user entered a number 100 or less
+JA ENDPROG
 
-xor edx, edx
-div ebx ;Divides whatever is stored in eax
-mov MEAN, ax
+cmp AL, 90 ;Checks if User scored an A
+JNAE LessThanA ;Jump if not above 90 or equal to 90
+mov Grade,"A"
+jmp Result
 
-mov edx, OFFSET displayMean
+LessThanA:
+cmp AL, 80 ;Checks if User scored a B
+JNAE LessThanB ;Jump if not above 80 or equal to 80
+mov Grade,"B"
+jmp Result
+
+LessThanB:
+cmp AL, 70 ;Checks if User scored a C
+JNAE LessThanC ;Jump if not above 70 or equal to 70
+mov Grade,"C"
+jmp Result
+
+LessThanC:
+cmp AL, 60 ;Checks if User scored a D
+JNAE LessThanD ;Jump if not above 60 or equal to 60
+mov Grade,"D"
+jmp Result
+
+LessThanD:
+mov Grade,"E"
+jmp Result
+
+
+Result:
+;Writes Score
+mov edx, OFFSET displayScore
 call WriteString
 call WriteDec
-CALL crlf ;new line
+CALL crlf
 
+;Writes Grade
+mov edx, OFFSET displayGrade
+call WriteString
+mov edx, OFFSET Grade
+call WriteString
+CALL crlf
 
-;   /************************************************************\
-;  /   2) Finding the variance given the mean and set of data     \
-; /****************************************************************\
-
-;2.1) Calculates the diff between each element in RAW with MEAN
-mov esi,OFFSET RAW 
-mov edi,OFFSET DIFF
-mov ecx,(LENGTHOF RAW)
-
-findDiff:
-	mov ax,MEAN
-	sub ax,[esi]
-	mov [edi],ax
-	add esi,2
-	add edi,2
-loop findDiff
-
-
-;2.2) SQUARES the results from last step
-mov esi, OFFSET DIFF
-mov edi,OFFSET SQUARE
-mov ecx,(LENGTHOF RAW)
-
-findSQUARE:
-mov ax,[esi]
-mov bx,ax
-mul bx 
-mov [edi],ax
-add edi,2
-add esi,2
-loop findSQUARE
-
-;Final Step) SUMS UP ALL OF THE SQUARES FROM LAST STEP
-mov esi, OFFSET SQUARE
-mov ecx,(LENGTHOF RAW)
-mov ax,0
-
-findResult:
-  mov bx,[esi]
-  add ax,bx
-  mov [esi],ax
-  add esi,2
-loop findResult
-
-mov ebx,(LENGTHOF RAW)
-xor edx,edx ;Need to clear dx before dividing
-div ebx ;Acts as divisor for whatever is stored in eax, which is 339
-
-mov edx, OFFSET displayVariance 
-call WriteString 
-call WriteDec 
-call crlf
+;End of Program
+ENDPROG: 
 
 INVOKE ExitProcess,0
 main ENDP

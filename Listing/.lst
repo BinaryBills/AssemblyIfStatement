@@ -1,12 +1,13 @@
-Microsoft (R) Macro Assembler Version 14.29.30040.0	    02/19/22 01:21:51
+Microsoft (R) Macro Assembler Version 14.29.30040.0	    03/04/22 14:59:10
 Main.asm						     Page 1 - 1
 
 
 				;Author: Binary Bills
-				;Creation Date: February 14,2022
-				;Modification Date: February 16,2022
-				;Purpose: Compute the mean and the variance of data at location RAW, 
-				;defining the raw data as WORD.
+				;Creation Date: March 3,2022
+				;Modification Date: March 4,2022
+				;Purpose: Reads a number between 0 and 100 into the register Al and assigns the
+				;the letter according to the if-statements
+
 				INCLUDE Irvine32.inc
 			      C ; Include file for Irvine32.lib             (Irvine32.inc)
 			      C 
@@ -25,7 +26,6 @@ Main.asm						     Page 1 - 1
 			      C .NOLIST
 			      C .LIST
 			      C 
-
 				.386
 				.model flat,stdcall
 Main.asm(9) : warning A4011:multiple .MODEL directives found : .MODEL ignored
@@ -33,110 +33,85 @@ Main.asm(9) : warning A4011:multiple .MODEL directives found : .MODEL ignored
 				ExitProcess PROTO, dwExitCode:DWORD
 
  00000000			.data
- 00000000 000A 000C 0008	RAW WORD 10, 12, 8, 17, 9, 22, 18, 11, 23, 7, 30, 22, 19, 60, 71
-	   0011 0009 0016
-	   0012 000B 0017
-	   0007 001E 0016
-	   0013 003C 0047
- 0000001E  0000000F [		DIFF WORD 15 Dup(?)
-	    0000
-	   ]
- 0000003C  0000000F [		SQUARE WORD 15 Dup(?)
-	    0000
-	   ]
- 0000005A 0000			MEAN WORD 0
- 0000005C 4D 45 41 4E 3A	displayMean BYTE "MEAN: ", 0
-	   20 00
- 00000063 56 61 72 3A 20	displayVariance BYTE "Var: ",0
+ 00000000 49 6E 70 75 74	prompt db "Input a number between 0-100: ",0	;User prompt
+	   20 61 20 6E 75
+	   6D 62 65 72 20
+	   62 65 74 77 65
+	   65 6E 20 30 2D
+	   31 30 30 3A 20
 	   00
+ 0000001F 00			userInput BYTE ?
+ 00000020 47 72 61 64 65	displayGrade BYTE "Grade: ", 0
+	   3A 20 00
+ 00000028 53 63 6F 72 65	displayScore BYTE "Score: ", 0
+	   3A 20 00
+ 00000030 00			Grade BYTE ?
 
  00000000			.code
  00000000			main PROC
-				 
-				;   /************************************************************\
-				;  /      1) Finding the Mean Given a Set of Data                 \
-				; /****************************************************************\
+ 00000000  BA 00000000 R	mov edx, OFFSET prompt 
+ 00000005  E8 00000000 E	call writeString	;Prompts user to input integer
+ 0000000A  E8 00000000 E	call readint	;Reads number from user and places it in the al register
 
- 00000000  BE 00000000 R	mov esi,OFFSET RAW ;1st mem address of RAW
- 00000005  B9 0000000F		mov ecx,(LENGTHOF RAW) ;Loop Counter
- 0000000A  BB 0000000F		mov ebx,(LENGTHOF RAW) ;Divisor
- 0000000F  66| B8 0000		mov ax, 0 ;Arithmetic reg (add, dividend,etc.)
+ 0000000F  78 6E		JS EndProg ;Makes sure user enters positive number
 
- 00000013			findSum:
- 00000013  66| 03 06		add ax,[esi]
- 00000016  0F B7 C0		movzx eax,ax ;Converts to 32-bit so it can be used by writeDec
- 00000019  83 C6 02		add esi,2 ;Increments by 2 bytes to reach next address
- 0000001C  E2 F5		loop findSum
+ 00000011  3C 64		cmp AL, 100 ;Makes sure the user entered a number 100 or less
+ 00000013  77 6A		JA ENDPROG
 
- 0000001E  33 D2		xor edx, edx
- 00000020  F7 F3		div ebx ;Divides whatever is stored in eax
- 00000022  66| A3		mov MEAN, ax
-	   0000005A R
+ 00000015  3C 5A		cmp AL, 90 ;Checks if User scored an A
+ 00000017  72 09		JNAE LessThanA ;Jump if not above 90 or equal to 90
+ 00000019  C6 05 00000030 R	mov Grade,"A"
+	   41
+ 00000020  EB 30		jmp Result
 
- 00000028  BA 0000005C R	mov edx, OFFSET displayMean
- 0000002D  E8 00000000 E	call WriteString
- 00000032  E8 00000000 E	call WriteDec
- 00000037  E8 00000000 E	CALL crlf ;new line
+ 00000022			LessThanA:
+ 00000022  3C 50		cmp AL, 80 ;Checks if User scored a B
+ 00000024  72 09		JNAE LessThanB ;Jump if not above 80 or equal to 80
+ 00000026  C6 05 00000030 R	mov Grade,"B"
+	   42
+ 0000002D  EB 23		jmp Result
 
+ 0000002F			LessThanB:
+ 0000002F  3C 46		cmp AL, 70 ;Checks if User scored a C
+ 00000031  72 09		JNAE LessThanC ;Jump if not above 70 or equal to 70
+ 00000033  C6 05 00000030 R	mov Grade,"C"
+	   43
+ 0000003A  EB 16		jmp Result
 
-				;   /************************************************************\
-				;  /   2) Finding the variance given the mean and set of data     \
-				; /****************************************************************\
+ 0000003C			LessThanC:
+ 0000003C  3C 3C		cmp AL, 60 ;Checks if User scored a D
+ 0000003E  72 09		JNAE LessThanD ;Jump if not above 60 or equal to 60
+ 00000040  C6 05 00000030 R	mov Grade,"D"
+	   44
+ 00000047  EB 09		jmp Result
 
-				;2.1) Calculates the diff between each element in RAW with MEAN
- 0000003C  BE 00000000 R	mov esi,OFFSET RAW 
- 00000041  BF 0000001E R	mov edi,OFFSET DIFF
- 00000046  B9 0000000F		mov ecx,(LENGTHOF RAW)
-
- 0000004B			findDiff:
- 0000004B  66| A1			mov ax,MEAN
-	   0000005A R
- 00000051  66| 2B 06			sub ax,[esi]
- 00000054  66| 89 07			mov [edi],ax
- 00000057  83 C6 02			add esi,2
- 0000005A  83 C7 02			add edi,2
- 0000005D  E2 EC		loop findDiff
+ 00000049			LessThanD:
+ 00000049  C6 05 00000030 R	mov Grade,"E"
+	   45
+ 00000050  EB 00		jmp Result
 
 
-				;2.2) SQUARES the results from last step
- 0000005F  BE 0000001E R	mov esi, OFFSET DIFF
- 00000064  BF 0000003C R	mov edi,OFFSET SQUARE
- 00000069  B9 0000000F		mov ecx,(LENGTHOF RAW)
+ 00000052			Result:
+				;Writes Score
+ 00000052  BA 00000028 R	mov edx, OFFSET displayScore
+ 00000057  E8 00000000 E	call WriteString
+ 0000005C  E8 00000000 E	call WriteDec
+ 00000061  E8 00000000 E	CALL crlf
 
- 0000006E			findSQUARE:
- 0000006E  66| 8B 06		mov ax,[esi]
- 00000071  66| 8B D8		mov bx,ax
- 00000074  66| F7 E3		mul bx 
- 00000077  66| 89 07		mov [edi],ax
- 0000007A  83 C7 02		add edi,2
- 0000007D  83 C6 02		add esi,2
- 00000080  E2 EC		loop findSQUARE
+				;Writes Grade
+ 00000066  BA 00000020 R	mov edx, OFFSET displayGrade
+ 0000006B  E8 00000000 E	call WriteString
+ 00000070  BA 00000030 R	mov edx, OFFSET Grade
+ 00000075  E8 00000000 E	call WriteString
+ 0000007A  E8 00000000 E	CALL crlf
 
-				;Final Step) SUMS UP ALL OF THE SQUARES FROM LAST STEP
- 00000082  BE 0000003C R	mov esi, OFFSET SQUARE
- 00000087  B9 0000000F		mov ecx,(LENGTHOF RAW)
- 0000008C  66| B8 0000		mov ax,0
-
- 00000090			findResult:
- 00000090  66| 8B 1E		  mov bx,[esi]
- 00000093  66| 03 C3		  add ax,bx
- 00000096  66| 89 06		  mov [esi],ax
- 00000099  83 C6 02		  add esi,2
- 0000009C  E2 F2		loop findResult
-
- 0000009E  BB 0000000F		mov ebx,(LENGTHOF RAW)
- 000000A3  33 D2		xor edx,edx ;Need to clear dx before dividing
- 000000A5  F7 F3		div ebx ;Acts as divisor for whatever is stored in eax, which is 339
-
- 000000A7  BA 00000063 R	mov edx, OFFSET displayVariance 
- 000000AC  E8 00000000 E	call WriteString 
- 000000B1  E8 00000000 E	call WriteDec 
- 000000B6  E8 00000000 E	call crlf
+				;End of Program
+ 0000007F			ENDPROG: 
 
 				INVOKE ExitProcess,0
- 000000C2			main ENDP
+ 00000086			main ENDP
 				END main
-Microsoft (R) Macro Assembler Version 14.29.30040.0	    02/19/22 01:21:51
+Microsoft (R) Macro Assembler Version 14.29.30040.0	    03/04/22 14:59:10
 Main.asm						     Symbols 2 - 1
 
 
@@ -230,8 +205,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 00000069 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 000000C2 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000031 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000086 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -338,11 +313,13 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 000000C2 Public STDCALL
-  findSum  . . . . . . . . . . .	L Near	 00000013 _TEXT	
-  findDiff . . . . . . . . . . .	L Near	 0000004B _TEXT	
-  findSQUARE . . . . . . . . . .	L Near	 0000006E _TEXT	
-  findResult . . . . . . . . . .	L Near	 00000090 _TEXT	
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000086 Public STDCALL
+  LessThanA  . . . . . . . . . .	L Near	 00000022 _TEXT	
+  LessThanB  . . . . . . . . . .	L Near	 0000002F _TEXT	
+  LessThanC  . . . . . . . . . .	L Near	 0000003C _TEXT	
+  LessThanD  . . . . . . . . . .	L Near	 00000049 _TEXT	
+  Result . . . . . . . . . . . .	L Near	 00000052 _TEXT	
+  ENDPROG  . . . . . . . . . . .	L Near	 0000007F _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -367,7 +344,6 @@ CREATE_ALWAYS  . . . . . . . . .	Number	 00000002h
 CREATE_NEW . . . . . . . . . . .	Number	 00000001h   
 CTRL_MASK  . . . . . . . . . . .	Number	 0000000Ch   
 CreateFile . . . . . . . . . . .	Text   	 CreateFileA
-DIFF . . . . . . . . . . . . . .	Word	 0000001E _DATA	
 DO_NOT_SHARE . . . . . . . . . .	Number	 00000000h   
 ENABLE_ECHO_INPUT  . . . . . . .	Number	 00000004h   
 ENABLE_LINE_INPUT  . . . . . . .	Number	 00000002h   
@@ -411,6 +387,7 @@ GENERIC_EXECUTE  . . . . . . . .	Number	 20000000h
 GENERIC_READ . . . . . . . . . .	Number	 -80000000h   
 GENERIC_WRITE  . . . . . . . . .	Number	 40000000h   
 GetCommandLine . . . . . . . . .	Text   	 GetCommandLineA
+Grade  . . . . . . . . . . . . .	Byte	 00000030 _DATA	
 HANDLE . . . . . . . . . . . . .	Text   	 DWORD
 HEAP_GENERATE_EXCEPTIONS . . . .	Number	 00000004h   
 HEAP_GROWABLE  . . . . . . . . .	Number	 00000002h   
@@ -459,7 +436,6 @@ MB_TASKMODAL . . . . . . . . . .	Number	 00002000h
 MB_USERICON  . . . . . . . . . .	Number	 00000080h   
 MB_YESNOCANCEL . . . . . . . . .	Number	 00000003h   
 MB_YESNO . . . . . . . . . . . .	Number	 00000004h   
-MEAN . . . . . . . . . . . . . .	Word	 0000005A _DATA	
 MENU_EVENT . . . . . . . . . . .	Number	 00000008h   
 MOUSE_EVENT  . . . . . . . . . .	Number	 00000002h   
 MessageBox . . . . . . . . . . .	Text   	 MessageBoxA
@@ -468,7 +444,6 @@ NUMLOCK_ON . . . . . . . . . . .	Number	 00000020h
 OPEN_ALWAYS  . . . . . . . . . .	Number	 00000004h   
 OPEN_EXISTING  . . . . . . . . .	Number	 00000003h   
 PeekConsoleInput . . . . . . . .	Text   	 PeekConsoleInputA
-RAW  . . . . . . . . . . . . . .	Word	 00000000 _DATA	
 RIGHT_ALT_PRESSED  . . . . . . .	Number	 00000001h   
 RIGHT_CTRL_PRESSED . . . . . . .	Number	 00000004h   
 ReadConsoleInput . . . . . . . .	Text   	 ReadConsoleInputA
@@ -476,7 +451,6 @@ ReadConsole  . . . . . . . . . .	Text   	 ReadConsoleA
 SCROLLLOCK_ON  . . . . . . . . .	Number	 00000040h   
 SHIFT_MASK . . . . . . . . . . .	Number	 00000010h   
 SHIFT_PRESSED  . . . . . . . . .	Number	 00000010h   
-SQUARE . . . . . . . . . . . . .	Word	 0000003C _DATA	
 STD_ERROR_HANDLE . . . . . . . .	Number	 -0000000Ch   
 STD_INPUT_HANDLE . . . . . . . .	Number	 -0000000Ah   
 STD_OUTPUT_HANDLE  . . . . . . .	Number	 -0000000Bh   
@@ -569,8 +543,8 @@ black  . . . . . . . . . . . . .	Number	 00000000h
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
-displayMean  . . . . . . . . . .	Byte	 0000005C _DATA	
-displayVariance  . . . . . . . .	Byte	 00000063 _DATA	
+displayGrade . . . . . . . . . .	Byte	 00000020 _DATA	
+displayScore . . . . . . . . . .	Byte	 00000028 _DATA	
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
@@ -581,7 +555,9 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
+prompt . . . . . . . . . . . . .	Byte	 00000000 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
+userInput  . . . . . . . . . . .	Byte	 0000001F _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   
